@@ -1,41 +1,55 @@
+version: "3.9"
+
+networks:
+  squash-net:
+
+volumes:
+  db-data:
+  squash-logs:
+  orchestrator-license:
+
 services:
-  squash-tm-db:
+  db:
     image: postgres:12
+    restart: unless-stopped
     environment:
       POSTGRES_USER: squash
       POSTGRES_PASSWORD: squash
       POSTGRES_DB: squash_tm
     volumes:
-      - squash_tm-db:/var/lib/postgresql/data
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - squash-net
 
-  squash-tm:
-    image: squashtest/squash-tm
-    depends_on: [squash-tm-db]
+  squash:
+    image: squashtest/squash:latest   # image maintenue, succède à squash-tm :contentReference[oaicite:1]{index=1}
+    depends_on:
+      - db
     environment:
-      POSTGRES_ENV_POSTGRES_USER: squash
-      POSTGRES_ENV_POSTGRES_PASSWORD: squash
-      POSTGRES_ENV_POSTGRES_DB: squash_tm
+      PGHOST: db
+      PGPORT: 5432
+      PGDATABASE: squash_tm
+      PGUSER: squash
+      PGPASSWORD: squash
+      PORT: 8080                     # Railway exige une écoute sur $PORT :contentReference[oaicite:2]{index=2}
     ports:
       - "8080:8080"
     volumes:
-      - squash_tm-logs:/opt/squash-tm/logs
+      - squash-logs:/opt/squash-tm/logs
+    networks:
+      - squash-net
 
   orchestrator:
-    image: squashtest/squash-orchestrator:latest
+    image: squashtest/squash-orchestrator:latest  # ports 7774/7775/7776/38368 :contentReference[oaicite:3]{index=3}
     environment:
       SSH_CHANNEL_HOST: mysql
       SSH_CHANNEL_USER: root
       SSH_CHANNEL_PASSWORD: root
       SSH_CHANNEL_TAGS: ssh,linux,robotframework
-      #ENV SQUASH_LICENCE_TYPE=premium  # si licence Premium
+      # SQUASH_LICENCE_TYPE: premium   # décommentez si vous possédez une licence
     ports:
-      - "7774:7774"
-      - "7775:7775"
-      - "7776:7776"
-      - "38368:38368"
+      - "7774:7774"   # Réceptionniste – unique port à exposer publiquement
     volumes:
-      - ./license:/app/license  # ta licence ultérieure
-
-volumes:
-  squash_tm-db:
-  squash_tm-logs:
+      - orchestrator-license:/app/license
+    networks:
+      - squash-net
