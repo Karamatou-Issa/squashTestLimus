@@ -1,55 +1,52 @@
-version: "3.9"
+version: '3.7'
+services:
+  squash-tm-pg:
+    container_name: squash-tm-pg
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_USER: ${DB_USER}
+    image: postgres:13
+    volumes:
+      - /var/lib/db-postgresql:/var/lib/postgresql/data
+    networks:
+      - db-network
 
-networks:
-  squash-net:
+  squash-tm:
+    depends_on:
+      - squash-tm-pg
+    environment:
+      SQTM_DB_USERNAME: ${DB_USER}
+      SQTM_DB_PASSWORD: ${DB_PASSWORD}
+      SQTM_DB_NAME: ${DB_DATABASE}
+      VIRTUAL_HOST: mysquash.example.com
+    ports:
+      - 8090:8080/tcp
+    image: squashtest/squash:8.0.0
+    links:
+      - squash-tm-pg:postgres
+    volumes:
+      - squash-tm-logs:/opt/squash-tm/logs
+      # Uncomment bellow if you want to activate plugins
+      #- your/path/start-plugins.cfg:/opt/squash-tm/conf/start-plugins.cfg 
+    networks:
+      - nginx-proxy
+      - db-network
+
+  nginx-proxy:
+    container_name: nginx
+    image: jwilder/nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    networks:
+      - nginx-proxy
 
 volumes:
-  db-data:
-  squash-logs:
-  orchestrator-license:
+  squash-tm-logs:
 
-services:
-  db:
-    image: postgres:12
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: squash
-      POSTGRES_PASSWORD: squash
-      POSTGRES_DB: squash_tm
-    volumes:
-      - db-data:/var/lib/postgresql/data
-    networks:
-      - squash-net
-
-  squash:
-    image: squashtest/squash:latest   # image maintenue, succède à squash-tm :contentReference[oaicite:1]{index=1}
-    depends_on:
-      - db
-    environment:
-      PGHOST: db
-      PGPORT: 5432
-      PGDATABASE: squash_tm
-      PGUSER: squash
-      PGPASSWORD: squash
-      PORT: 8080                     # Railway exige une écoute sur $PORT :contentReference[oaicite:2]{index=2}
-    ports:
-      - "8080:8080"
-    volumes:
-      - squash-logs:/opt/squash-tm/logs
-    networks:
-      - squash-net
-
-  orchestrator:
-    image: squashtest/squash-orchestrator:latest  # ports 7774/7775/7776/38368 :contentReference[oaicite:3]{index=3}
-    environment:
-      SSH_CHANNEL_HOST: mysql
-      SSH_CHANNEL_USER: root
-      SSH_CHANNEL_PASSWORD: root
-      SSH_CHANNEL_TAGS: ssh,linux,robotframework
-      # SQUASH_LICENCE_TYPE: premium   # décommentez si vous possédez une licence
-    ports:
-      - "7774:7774"   # Réceptionniste – unique port à exposer publiquement
-    volumes:
-      - orchestrator-license:/app/license
-    networks:
-      - squash-net
+networks:
+  nginx-proxy:
+  db-network:
