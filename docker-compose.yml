@@ -1,4 +1,3 @@
-version: "3.8"
 services:
   squash-tm-db:
     image: postgres:12
