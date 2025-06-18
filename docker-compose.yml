@@ -16,7 +16,7 @@ services:
       POSTGRES_ENV_POSTGRES_PASSWORD: squash
       POSTGRES_ENV_POSTGRES_DB: squash_tm
     ports:
-      - "8090:8080"
+      - "8080:8080"
     volumes:
       - squash_tm-logs:/opt/squash-tm/logs
 
