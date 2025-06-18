@@ -1,0 +1,42 @@
+version: "3.8"
+services:
+  squash-tm-db:
+    image: postgres:12
+    environment:
+      POSTGRES_USER: squash
+      POSTGRES_PASSWORD: squash
+      POSTGRES_DB: squash_tm
+    volumes:
+      - squash_tm-db:/var/lib/postgresql/data
+
+  squash-tm:
+    image: squashtest/squash-tm
+    depends_on: [squash-tm-db]
+    environment:
+      POSTGRES_ENV_POSTGRES_USER: squash
+      POSTGRES_ENV_POSTGRES_PASSWORD: squash
+      POSTGRES_ENV_POSTGRES_DB: squash_tm
+    ports:
+      - "8090:8080"
+    volumes:
+      - squash_tm-logs:/opt/squash-tm/logs
+
+  orchestrator:
+    image: squashtest/squash-orchestrator:latest
+    environment:
+      SSH_CHANNEL_HOST: mysql
+      SSH_CHANNEL_USER: root
+      SSH_CHANNEL_PASSWORD: root
+      SSH_CHANNEL_TAGS: ssh,linux,robotframework
+      #ENV SQUASH_LICENCE_TYPE=premium  # si licence Premium
+    ports:
+      - "7774:7774"
+      - "7775:7775"
+      - "7776:7776"
+      - "38368:38368"
+    volumes:
+      - ./license:/app/license  # ta licence ultérieure
+
+volumes:
+  squash_tm-db:
+  squash_tm-logs:
