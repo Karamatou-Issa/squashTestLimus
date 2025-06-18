@@ -1,14 +1,11 @@
-# Indique l'image de base : Squash Orchestrator 'all-in-one'
-FROM squashtest/squash-orchestrator:latest
+# Dockerfile : service "squash" destiné à Railway
+FROM squashtest/squash:latest
 
-# (Optionnel) Copie ici vos fichiers de config, licence, etc.
-# COPY ./license /app/license
-# COPY squashtf.yaml /app/squashtf.yaml
+# Railway injecte automatiquement la variable PORT au runtime
+ENV PORT=8080
+EXPOSE 8080
 
-# Récupère les licences premium si besoin
-# ENV SQUASH_LICENCE_TYPE=premium
+# (Optionnel) Copiez ici vos fichiers de configuration ou de licence
+# COPY ./license /opt/squash-tm/license
 
-# Expose les ports nécessaires (l'image les ouvre déjà, mais explicitons)
-EXPOSE 7774 7775 7776 38368
-
-# Aucune commande CMD nécessaire : l'image démarre ses services par défaut
+# L’image démarre Tomcat par défaut ; aucun CMD additionnel nécessaire
